@@ -1,0 +1,21 @@
+{
+  "mission": {
+    "name": "default_uav_mission",
+    "target_altitude_m": 1000.0
+  },
+  "thresholds": {
+    "low_battery_percent": 25.0,
+    "engine_overheat_celsius": 90.0,
+    "signal_weak_percent": 30.0,
+    "telemetry_timeout_ms": 3000,
+    "altitude_tolerance_m": 50.0
+  },
+  "udp": {
+    "listen_ip": "127.0.0.1",
+    "listen_port": 5005
+  },
+  "logging": {
+    "directory": "logs",
+    "mission_log": "mission_log.csv"
+  }
+}
