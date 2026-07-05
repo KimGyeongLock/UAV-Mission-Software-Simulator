@@ -10,6 +10,7 @@ add_executable(uav_mission_sw_simulator
     src/main.cpp
     src/core/MissionController.cpp
     src/core/HealthMonitor.cpp
+    src/core/StringUtils.cpp
     src/io/UdpReceiver.cpp
     src/io/CsvLogger.cpp
     src/scheduler/PeriodicTask.cpp

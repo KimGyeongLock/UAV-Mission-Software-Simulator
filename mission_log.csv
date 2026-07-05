@@ -1,0 +1,2 @@
+state,event,battery_percent,engine_temperature_c,altitude_m,target_altitude_m,signal_strength_percent,valid
+RETURN_HOME,LOW_BATTERY,20,60,1000,1000,90,1

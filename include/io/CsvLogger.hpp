@@ -1,5 +1,6 @@
 #pragma once
 
+#include <fstream>
 #include <string>
 
 #include "core/Event.hpp"
@@ -12,17 +13,15 @@ class CsvLogger {
 public:
     explicit CsvLogger(std::string log_path);
 
-    // TODO: Open CSV file and write header.
     bool open();
 
-    // TODO: Write mission state, event, and telemetry fields to CSV.
     void log(const core::MissionState state, const core::Event& event, const core::Telemetry& telemetry);
 
-    // TODO: Flush and close CSV file.
     void close();
 
 private:
     std::string log_path_;
+    std::ofstream file_; // 파일에 글을 쓰는 객체
 };
 
 }  // namespace uav::io
