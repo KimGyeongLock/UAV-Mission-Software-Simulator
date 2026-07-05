@@ -12,11 +12,21 @@ PeriodicTask::~PeriodicTask() {
 }
 
 void PeriodicTask::start() {
-    // TODO: Start periodic worker thread.
+    if (running_) {
+        return;
+    }
+
+    running_ = true;
+
+    worker_ = std::thread([this]() {
+        while (running_) {
+            task_();
+            std::this_thread::sleep_for(period_);
+        }
+    });
 }
 
 void PeriodicTask::stop() {
-    // TODO: Signal worker thread to stop and join it.
     running_ = false;
     if (worker_.joinable()) {
         worker_.join();

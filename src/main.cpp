@@ -1,4 +1,6 @@
 #include <iostream>
+#include <chrono>
+#include <thread>
 
 #include "core/Event.hpp"
 #include "core/HealthMonitor.hpp"
@@ -6,6 +8,7 @@
 #include "core/Telemetry.hpp"
 #include "core/StringUtils.hpp"
 #include "io/CsvLogger.hpp"
+#include "scheduler/PeriodicTask.hpp"
 
 using namespace std;
 
@@ -43,8 +46,24 @@ int main() {
     controller.handleEvent(event);
     cout << "After handleEvent: " << uav::core::toString(controller.state()) << "\n";
 
+    //
     logger.log(controller.state(), event, telemetry);
     logger.close();
+
+    //
+    int tick_count = 0;
+    uav::scheduler::PeriodicTask task(
+        [&]() {
+            std::cout << "Periodic tick: " << tick_count << "\n";
+            ++tick_count;
+        },
+        std::chrono::milliseconds(1000)
+    );
+
+    task.start();
+    std::this_thread::sleep_for(std::chrono::seconds(3));
+
+    task.stop();
 
     return 0;
 }
