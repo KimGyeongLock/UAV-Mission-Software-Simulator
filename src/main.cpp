@@ -22,40 +22,40 @@ int main() {
         return 1;
     }
 
-    cout << "UAV Mission Software Simulator\n";
-
-    cout << "Initial state: " << uav::core::toString(controller.state()) << "\n";
+    int tick_count = 0;
 
     controller.startMission();
-    cout << "After startMission: " << uav::core::toString(controller.state()) << "\n";
 
-    controller.update();
-    cout << "After update: " << uav::core::toString(controller.state()) << "\n";
-
-    uav::core::Telemetry telemetry;
-    telemetry.battery_percent = 20.0;
-    telemetry.engine_temperature_c = 60.0;
-    telemetry.signal_strength_percent = 90.0;
-    telemetry.altitude_m = 1000.0;
-    telemetry.target_altitude_m = 1000.0;
-    telemetry.valid = true;
-
-    const auto event = monitor.evaluate(telemetry);
-    cout << "Detected event: " << uav::core::toString(event.type) << "\n";
-
-    controller.handleEvent(event);
-    cout << "After handleEvent: " << uav::core::toString(controller.state()) << "\n";
-
-    //
-    logger.log(controller.state(), event, telemetry);
-    logger.close();
-
-    //
-    int tick_count = 0;
     uav::scheduler::PeriodicTask task(
         [&]() {
-            std::cout << "Periodic tick: " << tick_count << "\n";
-            ++tick_count;
+            uav::core::Telemetry telemetry;
+            telemetry.battery_percent = 80.0;
+            telemetry.engine_temperature_c = 60.0;
+            telemetry.signal_strength_percent = 90.0;
+            telemetry.altitude_m = 1000.0;
+            telemetry.target_altitude_m = 1000.0;
+            telemetry.valid = true;
+
+            if (tick_count >= 2) {
+                telemetry.battery_percent = 20.0;
+            }
+
+            const auto event = monitor.evaluate(telemetry);
+
+            if (event.type == uav::core::EventType::NONE) {
+                controller.update();
+            } else {
+                controller.handleEvent(event);
+            }
+            logger.log(controller.state(), event, telemetry);
+
+            cout << "tick=" << tick_count
+                 << " state=" << uav::core::toString(controller.state())
+                 << " event=" << uav::core::toString(event.type)
+                 << " battery=" << telemetry.battery_percent
+                 << '\n';
+
+            tick_count++;
         },
         std::chrono::milliseconds(1000)
     );

@@ -14,10 +14,8 @@ public:
     PeriodicTask(Task task, std::chrono::milliseconds period);
     ~PeriodicTask();
 
-    // TODO: Start a worker thread that runs task periodically.
     void start();
 
-    // TODO: Stop the worker thread safely.
     void stop();
 
 private:
