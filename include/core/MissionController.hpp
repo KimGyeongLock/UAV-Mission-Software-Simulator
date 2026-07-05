@@ -1,4 +1,4 @@
-#pragma once
+#pragma once // 이 헤더 파일이 한 번만 포함되게 해주는 지시문
 
 #include "core/Event.hpp"
 #include "core/MissionState.hpp"
@@ -9,13 +9,10 @@ class MissionController {
 public:
     MissionController();
 
-    // TODO: Implement mission start transition from READY to TAKEOFF.
     void startMission();
 
-    // TODO: Implement normal mission progress transitions.
     void update();
 
-    // TODO: Implement event-driven transition policy.
     void handleEvent(const Event& event);
 
     // TODO: Add helper methods for state validation if needed.

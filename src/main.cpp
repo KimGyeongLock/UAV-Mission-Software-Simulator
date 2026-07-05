@@ -8,5 +8,9 @@ int main() {
     // TODO: Wire UdpReceiver, HealthMonitor, MissionController, PeriodicTask, and CsvLogger.
     std::cout << "UAV Mission Software Simulator scaffold\n";
 
+    controller.startMission();
+    controller.update();
+    controller.update();
+
     return 0;
 }
