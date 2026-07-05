@@ -9,7 +9,6 @@ class HealthMonitor {
 public:
     HealthMonitor();
 
-    // TODO: Implement battery, engine, signal, altitude, timeout, and validity checks.
     Event evaluate(const Telemetry& telemetry);
 
     // TODO: Implement timeout detection based on last telemetry receive time.
