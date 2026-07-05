@@ -3,10 +3,10 @@
 
 namespace {
     
-    constexpr double kLowBatteryThreshold = 25.0;
-    constexpr double kEngineOverheatThreshold = 90.0;
-    constexpr double kSignalWeakThreshold = 30.0;
-    constexpr double kAltitudeTolerance = 50.0;
+constexpr double kLowBatteryThreshold = 25.0;
+constexpr double kEngineOverheatThreshold = 90.0;
+constexpr double kSignalWeakThreshold = 30.0;
+constexpr double kAltitudeTolerance = 50.0;
 
 } // namespace
 
