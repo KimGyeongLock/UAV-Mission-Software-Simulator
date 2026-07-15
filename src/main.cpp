@@ -64,6 +64,7 @@ int main() {
     std::this_thread::sleep_for(std::chrono::seconds(3));
 
     task.stop();
+    logger.close();
 
     return 0;
 }
