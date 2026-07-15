@@ -1,35 +1,67 @@
-"""Telemetry generator scaffold for UAV Mission Software Simulator.
+import socket
+import time
 
-This file intentionally contains scenario stubs only.
-Implement UDP transmission and scenario data generation step by step.
-"""
+UDP_IP = "127.0.0.1"
+UDP_PORT = 5005
 
+def send_payload(sock, payload):
+    sock.sendto(payload.encode("utf-8"), (UDP_IP, UDP_PORT)) # 문자열을 byte 데이터로 변환
+    print(f"sent: {payload}")
 
 def normal_mission():
-    """TODO: Send nominal telemetry sequence for full mission completion."""
-    pass
+    """정상 임무 완료를 위한 정상 Telemetry 시퀀스를 전송"""
+    with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as sock:
+        for _ in range(3): # 3번 전송
+            payload = "80.0,60.0,90.0,1000.0,1000.0,1"
+            send_payload(sock, payload)
+            time.sleep(1)
 
 
 def low_battery_return():
-    """TODO: Send telemetry that drops battery below the return-home threshold."""
-    pass
+    """배터리가 복귀 임계값 아래로 떨어지는 Telemetry를 전송"""
+    with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as sock:
+        payloads = [
+            "80.0,60.0,90.0,1000.0,1000.0,1",
+            "80.0,60.0,90.0,1000.0,1000.0,1",
+            "20.0,60.0,90.0,1000.0,1000.0,1", # 배터리 20%
+        ]
+
+        for payload in payloads:
+            send_payload(sock, payload)
+            time.sleep(1)
 
 
 def engine_overheat_abort():
-    """TODO: Send telemetry that exceeds the engine overheat threshold."""
-    pass
+    """엔진 과열 임계값을 초과하는 Telemetry를 전송"""
+    with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as sock:
+        payloads = [
+            "80.0,60.0,90.0,1000.0,1000.0,1",
+            "80.0,60.0,90.0,1000.0,1000.0,1",
+            "80.0,95.0,90.0,1000.0,1000.0,1", # 엔진 온도 95도
+        ]
+
+        for payload in payloads:
+            send_payload(sock, payload)
+            time.sleep(1)
 
 
 def telemetry_timeout_abort():
-    """TODO: Stop sending telemetry long enough to trigger timeout handling."""
+    """timeout 처리가 발생할 만큼 충분히 오래 Telemetry 전송을 멈춤"""
     pass
 
 
 def altitude_deviation_warning():
-    """TODO: Send telemetry with altitude outside the allowed tolerance."""
-    pass
+    """허용 오차를 벗어난 고도 Telemetry를 전송"""
+    with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as sock:
+        payloads = [
+            "80.0,60.0,90.0,1000.0,1000.0,1",
+            "80.0,60.0,90.0,1080.0,1000.0,1", # 80m 차이
+        ]
+
+        for payload in payloads:
+            send_payload(sock, payload)
+            time.sleep(1)
 
 
 if __name__ == "__main__":
-    # TODO: Add argparse scenario selection after C++ receiver behavior is implemented.
-    normal_mission()
+    low_battery_return()
