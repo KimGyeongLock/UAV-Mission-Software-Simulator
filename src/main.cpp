@@ -12,6 +12,26 @@
 
 using namespace std;
 
+namespace {
+
+uav::core::Telemetry createTelemetryForTick(int tick_count) {
+    uav::core::Telemetry telemetry;
+    telemetry.battery_percent = 80.0;
+    telemetry.engine_temperature_c = 60.0;
+    telemetry.signal_strength_percent = 90.0;
+    telemetry.altitude_m = 1000.0;
+    telemetry.target_altitude_m = 1000.0;
+    telemetry.valid = true;
+
+    if (tick_count >= 2) {
+        telemetry.battery_percent = 20.0;
+    }
+
+    return telemetry;
+}
+
+} // namespace
+
 int main() {
     uav::core::MissionController controller;
     uav::core::HealthMonitor monitor;
@@ -28,17 +48,7 @@ int main() {
 
     uav::scheduler::PeriodicTask task(
         [&]() {
-            uav::core::Telemetry telemetry;
-            telemetry.battery_percent = 80.0;
-            telemetry.engine_temperature_c = 60.0;
-            telemetry.signal_strength_percent = 90.0;
-            telemetry.altitude_m = 1000.0;
-            telemetry.target_altitude_m = 1000.0;
-            telemetry.valid = true;
-
-            if (tick_count >= 2) {
-                telemetry.battery_percent = 20.0;
-            }
+            const auto telemetry = createTelemetryForTick(tick_count);
 
             const auto event = monitor.evaluate(telemetry);
 
