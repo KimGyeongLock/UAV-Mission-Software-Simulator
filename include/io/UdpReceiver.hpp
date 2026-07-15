@@ -11,17 +11,15 @@ class UdpReceiver {
 public:
     explicit UdpReceiver(std::uint16_t port);
 
-    // TODO: Open and bind UDP socket.
     bool start();
 
-    // TODO: Receive UDP payload and parse it into Telemetry.
     std::optional<core::Telemetry> receive();
 
-    // TODO: Close UDP socket and release resources.
     void stop();
 
 private:
-    std::uint16_t port_{0};
+    std::uint16_t port_{0}; // 수신할 UDP 포트 번호
+    int socket_fd_{-1};     // 운영체제가 만든 socket을 가리키는 번호
 };
 
 }  // namespace uav::io
