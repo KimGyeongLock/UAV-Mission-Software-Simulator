@@ -14,6 +14,7 @@ add_executable(uav_mission_sw_simulator
     src/io/UdpReceiver.cpp
     src/io/CsvLogger.cpp
     src/scheduler/PeriodicTask.cpp
+    src/core/TelemetryParser.cpp
 )
 
 target_include_directories(uav_mission_sw_simulator

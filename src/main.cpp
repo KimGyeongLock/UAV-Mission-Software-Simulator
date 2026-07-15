@@ -9,25 +9,27 @@
 #include "core/StringUtils.hpp"
 #include "io/CsvLogger.hpp"
 #include "scheduler/PeriodicTask.hpp"
+#include "core/TelemetryParser.hpp"
 
 using namespace std;
 
 namespace {
 
 uav::core::Telemetry createTelemetryForTick(int tick_count) {
-    uav::core::Telemetry telemetry;
-    telemetry.battery_percent = 80.0;
-    telemetry.engine_temperature_c = 60.0;
-    telemetry.signal_strength_percent = 90.0;
-    telemetry.altitude_m = 1000.0;
-    telemetry.target_altitude_m = 1000.0;
-    telemetry.valid = true;
+    string line = "80.0,60.0,90.0,1000.0,1000.0,1";
 
     if (tick_count >= 2) {
-        telemetry.battery_percent = 20.0;
+        line = "20.0,60.0,90.0,1000.0,1000.0,1";
     }
 
-    return telemetry;
+    const auto telemetry = uav::core::parseTelemetryLine(line);
+    if (telemetry.has_value()) {
+        return telemetry.value();
+    }
+
+    uav::core::Telemetry invalid;
+    invalid.valid = false;
+    return invalid;
 }
 
 } // namespace
