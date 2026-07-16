@@ -1,5 +1,8 @@
 #include <gtest/gtest.h>
 
+#include <chrono>
+#include <thread>
+
 #include "core/Event.hpp"
 #include "core/HealthMonitor.hpp"
 #include "core/Telemetry.hpp"
@@ -55,4 +58,34 @@ TEST(HealthMonitorTest, DetectsAltitudeDeviation) {
     const auto event = monitor.evaluate(telemetry);
 
     EXPECT_EQ(event.type, uav::core::EventType::ALTITUDE_DEVIATION);
+}
+
+TEST(HealthMonitorTest, DetectsSignalWeak) {
+    uav::core::HealthMonitor monitor;
+    auto telemetry = createNormalTelemetry();
+    telemetry.signal_strength_percent = 20.0;
+
+    const auto event = monitor.evaluate(telemetry);
+
+    EXPECT_EQ(event.type, uav::core::EventType::SIGNAL_WEAK);
+}
+
+TEST(HealthMonitorTest, DetectsInvalidTelemetry) {
+    uav::core::HealthMonitor monitor;
+    auto telemetry = createNormalTelemetry();
+    telemetry.battery_percent = -1.0;
+
+    const auto event = monitor.evaluate(telemetry);
+
+    EXPECT_EQ(event.type, uav::core::EventType::INVALID_TELEMETRY);
+}
+
+TEST(HealthMonitorTest, DetectsTelemetryTimeout) {
+    uav::core::HealthMonitor monitor;
+
+    std::this_thread::sleep_for(std::chrono::milliseconds(3100));
+
+    const auto event = monitor.checkTelemetryTimeout();
+    
+    EXPECT_EQ(event.type, uav::core::EventType::TELEMETRY_TIMEOUT);
 }
