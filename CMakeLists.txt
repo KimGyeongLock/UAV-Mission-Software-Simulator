@@ -60,4 +60,6 @@ target_link_libraries(uav_mission_sw_tests
 )
 
 include(GoogleTest)
-gtest_discover_tests(uav_mission_sw_tests)
+gtest_discover_tests(uav_mission_sw_tests
+    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+)
