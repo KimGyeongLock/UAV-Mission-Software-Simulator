@@ -9,34 +9,19 @@
 #include "core/StringUtils.hpp"
 #include "io/CsvLogger.hpp"
 #include "scheduler/PeriodicTask.hpp"
-#include "core/TelemetryParser.hpp"
+#include "io/UdpReceiver.hpp"
 
 using namespace std;
-
-namespace {
-
-uav::core::Telemetry createTelemetryForTick(int tick_count) {
-    string line = "80.0,60.0,90.0,1000.0,1000.0,1";
-
-    if (tick_count >= 2) {
-        line = "20.0,60.0,90.0,1000.0,1000.0,1";
-    }
-
-    const auto telemetry = uav::core::parseTelemetryLine(line);
-    if (telemetry.has_value()) {
-        return telemetry.value();
-    }
-
-    uav::core::Telemetry invalid;
-    invalid.valid = false;
-    return invalid;
-}
-
-} // namespace
 
 int main() {
     uav::core::MissionController controller;
     uav::core::HealthMonitor monitor;
+
+    uav::io::UdpReceiver receiver(5005);
+    if (!receiver.start()) {
+        cerr << "Failed to start UDP receiver\n";
+        return 1;
+    }
 
     uav::io::CsvLogger logger("mission_log.csv");
     if (!logger.open()) {
@@ -50,21 +35,27 @@ int main() {
 
     uav::scheduler::PeriodicTask task(
         [&]() {
-            const auto telemetry = createTelemetryForTick(tick_count);
+            const auto telemetry = receiver.receive();
 
-            const auto event = monitor.evaluate(telemetry);
+            if (!telemetry.has_value()) {
+                cout << "tick=" << tick_count << " no telemetry received\n";
+                tick_count++;
+                return;
+            }
+
+            const auto event = monitor.evaluate(telemetry.value());
 
             if (event.type == uav::core::EventType::NONE) {
                 controller.update();
             } else {
                 controller.handleEvent(event);
             }
-            logger.log(controller.state(), event, telemetry);
+            logger.log(controller.state(), event, telemetry.value());
 
             cout << "tick=" << tick_count
                  << " state=" << uav::core::toString(controller.state())
                  << " event=" << uav::core::toString(event.type)
-                 << " battery=" << telemetry.battery_percent
+                 << " battery=" << telemetry->battery_percent
                  << '\n';
 
             tick_count++;
@@ -73,9 +64,10 @@ int main() {
     );
 
     task.start();
-    std::this_thread::sleep_for(std::chrono::seconds(3));
+    std::this_thread::sleep_for(std::chrono::seconds(10));
 
     task.stop();
+    receiver.stop();
     logger.close();
 
     return 0;
