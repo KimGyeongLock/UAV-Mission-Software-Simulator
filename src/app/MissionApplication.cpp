@@ -47,7 +47,7 @@ int MissionApplication::run() {
 
     scheduler::PeriodicTask task(
         [&]() {
-            const auto telemetry = receiver.receive();
+            const auto telemetry = consumeLatestTelemetry();
 
             if (!telemetry.has_value()) {
                 const auto event = monitor.checkTelemetryTimeout();
@@ -107,6 +107,7 @@ int MissionApplication::run() {
         std::chrono::milliseconds(1000)
     );
 
+    startReceiverThread(receiver);
     task.start();
 
     while (!mission_finished) {
@@ -114,10 +115,47 @@ int MissionApplication::run() {
     }
 
     task.stop();
+    stopReceiverThread();
     receiver.stop();
     logger.close();
 
     return 0;
+}
+
+void MissionApplication::startReceiverThread(io::UdpReceiver& receiver) {
+    receiver_running_ = true;
+
+    /*
+        receiver thread는 UDP 데이터를 기다린다.
+        데이터가 오면 latest_telemetry_에 저장한다.
+    */
+    receiver_thread_ = std::thread([this, &receiver]() {
+        while (receiver_running_) {
+            auto telemetry = receiver.receive();
+
+            if (telemetry.has_value()) {
+                std::lock_guard<std::mutex> lock(telemetry_mutex_);
+                latest_telemetry_ = telemetry.value();
+            }
+        }
+    });
+}
+
+void MissionApplication::stopReceiverThread() {
+    receiver_running_ = false;
+
+    if (receiver_thread_.joinable()) {
+        receiver_thread_.join();
+    }
+}
+
+std::optional<core::Telemetry> MissionApplication::consumeLatestTelemetry() {
+    std::lock_guard<std::mutex> lock(telemetry_mutex_);
+
+    auto telemetry = latest_telemetry_;
+    latest_telemetry_.reset();
+
+    return telemetry;
 }
 
 }  // namespace uav::app
