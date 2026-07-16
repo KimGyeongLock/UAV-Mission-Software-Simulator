@@ -1,5 +1,6 @@
 import socket
 import time
+import argparse
 
 UDP_IP = "127.0.0.1"
 UDP_PORT = 5005
@@ -73,6 +74,35 @@ def altitude_deviation_warning():
             send_payload(sock, payload)
             time.sleep(1)
 
+def parse_args():
+    parser = argparse.ArgumentParser(
+        description="UAV Mission Software Simulator Telemetry Generator"
+    )
+
+    parser.add_argument(
+        "--scenario",
+        choices=[
+            "normal",
+            "low_battery",
+            "engine_overheat",
+            "timeout",
+            "altitude_deviation"
+        ],
+        default="low_battery",
+        help="Telemetry scenario to run",
+    )
+
+    return parser.parse_args()
 
 if __name__ == "__main__":
-    telemetry_timeout_abort()
+    args = parse_args()
+
+    scenarios = {
+        "normal": normal_mission,
+        "low_battery": low_battery_return,
+        "engine_overheat": engine_overheat_abort,
+        "timeout": telemetry_timeout_abort,
+        "altitude_deviation":altitude_deviation_warning,
+    }
+
+    scenarios[args.scenario]()

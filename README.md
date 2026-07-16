@@ -99,7 +99,7 @@ cmake --build build
 터미널 2에서 Python Telemetry Generator 실행:
 
 ```bash
-python3 simulator/telemetry_generator.py
+python3 simulator/telemetry_generator.py --scenario low_battery
 ```
 
 ## 테스트 실행 방법
@@ -120,20 +120,31 @@ ctest --test-dir build
 
 ## 지원 시나리오
 
-- `normal_mission`: 정상 Telemetry 시퀀스 전송
-- `low_battery_return`: 배터리 부족으로 RETURN_HOME 유도
-- `engine_overheat_abort`: 엔진 과열로 ABORT 유도
-- `telemetry_timeout_abort`: Telemetry 전송 중단으로 timeout ABORT 유도
-- `altitude_deviation_warning`: 목표 고도 허용 오차 초과 이벤트 유도
+Python Telemetry Generator는 `--scenario` 옵션으로 실행할 시나리오를 선택한다.
+
+```bash
+python3 simulator/telemetry_generator.py --scenario normal
+python3 simulator/telemetry_generator.py --scenario low_battery
+python3 simulator/telemetry_generator.py --scenario engine_overheat
+python3 simulator/telemetry_generator.py --scenario timeout
+python3 simulator/telemetry_generator.py --scenario altitude_deviation
+```
+
+| 시나리오 | 설명 |
+| --- | --- |
+| `normal` | 정상 Telemetry 시퀀스 전송 |
+| `low_battery` | 배터리 부족으로 RETURN_HOME 유도 |
+| `engine_overheat` | 엔진 과열로 ABORT 유도 |
+| `timeout` | Telemetry 전송 중단으로 timeout ABORT 유도 |
+| `altitude_deviation` | 목표 고도 허용 오차 초과 이벤트 유도 |
 
 ## 개발 로드맵
 
 1. mission_config.json 기반 임계값 로딩
-2. Python Telemetry Generator 시나리오 선택 인자 추가
-3. UDP 수신 thread와 임무 처리 thread 분리 검토
-4. GoogleTest 시나리오 확대
-5. 로그 샘플과 실행 결과 이미지 추가
-6. README와 docs에 설계 의도 및 트러블슈팅 보강
+2. UDP 수신 thread와 임무 처리 thread 분리 검토
+3. GoogleTest 시나리오 확대
+4. 로그 샘플과 실행 결과 이미지 추가
+5. README와 docs에 설계 의도 및 트러블슈팅 보강
 
 ## 이력서용 프로젝트 요약 문장
 
