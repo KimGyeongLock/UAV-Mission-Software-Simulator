@@ -15,6 +15,7 @@ add_executable(uav_mission_sw_simulator
     src/io/CsvLogger.cpp
     src/scheduler/PeriodicTask.cpp
     src/core/TelemetryParser.cpp
+    src/core/MissionConfigLoader.cpp
 )
 
 target_include_directories(uav_mission_sw_simulator
@@ -43,6 +44,8 @@ add_executable(uav_mission_sw_tests
     src/core/HealthMonitor.cpp
     src/core/StringUtils.cpp
     src/core/TelemetryParser.cpp
+    src/core/MissionConfigLoader.cpp
+    tests/MissionConfigLoaderTest.cpp
 )
 
 target_include_directories(uav_mission_sw_tests

@@ -10,11 +10,12 @@
 #include "io/CsvLogger.hpp"
 #include "scheduler/PeriodicTask.hpp"
 #include "io/UdpReceiver.hpp"
+#include "core/MissionConfigLoader.hpp"
 
 using namespace std;
 
 int main() {
-    uav::core::MissionConfig config;
+    const auto config = uav::core::loadMissionConfigOrDefault("config/mission_config.json");
     uav::core::MissionController controller;
     uav::core::HealthMonitor monitor(config);
     uav::io::UdpReceiver receiver(config.udp_port);
