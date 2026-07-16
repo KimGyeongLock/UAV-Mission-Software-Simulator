@@ -4,7 +4,7 @@
 
 UAV Mission Software Simulator는 C++17 기반 무인기 임무 제어, 상태 감시, 비정상 대응 절차를 학습하고 포트폴리오로 정리하기 위한 시뮬레이터 프로젝트이다. 실제 비행 제어기를 구현하는 것이 아니라, 임무 소프트웨어 관점에서 상태머신, 주기 태스크, Telemetry 수신, 이상 탐지, 이벤트 로깅 구조를 설계하고 단계적으로 구현하는 것을 목표로 한다.
 
-이번 초기 버전은 프로젝트 구조, 설계 문서, CMake 빌드 뼈대, TODO 기반 소스 파일만 포함한다. 핵심 로직은 직접 구현할 수 있도록 의도적으로 비워 둔다.
+현재 버전은 상태머신, Telemetry 이벤트 탐지, UDP 수신, Python Telemetry 송신, CSV 로그 기록, 주기 태스크 실행, timeout 기반 Abort 처리, GoogleTest 검증까지 포함한 1차 동작 가능한 임무SW 시뮬레이터이다.
 
 ## KAI 임무SW 직무와의 연관성
 
@@ -16,13 +16,13 @@ UAV Mission Software Simulator는 C++17 기반 무인기 임무 제어, 상태 �
 - RTOS 환경을 가정한 주기 태스크 구조 이해
 - UDP 기반 외부 데이터 수신 구조 이해
 - 로그 기반 임무 분석 및 시험 재현성 확보
-- GoogleTest 기반 정상/비정상 시나리오 검증 계획 수립
+- GoogleTest 기반 정상/비정상 시나리오 검증
 
 ## 기술스택
 
 - C++17
 - CMake
-- GoogleTest 예정
+- GoogleTest
 - Python
 - UDP Socket
 - `std::thread`, `std::mutex`, `std::chrono`
@@ -30,28 +30,30 @@ UAV Mission Software Simulator는 C++17 기반 무인기 임무 제어, 상태 �
 
 ## 전체 아키텍처
 
-Python Telemetry Generator가 UDP로 가상의 비행 데이터를 송신하고, C++ Mission Software Simulator가 이를 수신한다. 수신된 Telemetry는 MissionController와 HealthMonitor에 전달되어 임무 상태 전이와 비정상 이벤트 판단에 사용된다. CsvLogger는 임무 상태, 이벤트, Telemetry를 CSV 로그로 기록한다.
+Python Telemetry Generator가 UDP로 가상의 비행 데이터를 송신하고, C++ Mission Software Simulator가 이를 수신한다. UdpReceiver는 UDP payload를 받고, TelemetryParser는 문자열 payload를 Telemetry 구조체로 변환한다. HealthMonitor는 Telemetry를 검사해 이벤트를 판단하고, MissionController는 이벤트와 현재 상태를 바탕으로 임무 상태를 전이한다. CsvLogger는 임무 상태, 이벤트, Telemetry를 CSV 로그로 기록한다.
 
 ```mermaid
 flowchart LR
     A["Python Telemetry Generator"] -->|UDP telemetry packet| B["C++ UDP Receiver"]
-    B --> C["Mission Software Simulator"]
-    C --> D["MissionController"]
-    C --> E["HealthMonitor"]
-    C --> F["CsvLogger"]
+    B --> C["TelemetryParser"]
+    C --> D["HealthMonitor"]
+    D --> E["MissionController"]
+    E --> F["CsvLogger"]
+    C --> F
     D --> F
-    E --> F
 ```
 
-## 구현 예정 기능
+## 구현 완료 기능
 
-- MissionController 기반 임무 상태머신 구현
+- MissionController 기반 임무 상태머신
 - HealthMonitor 기반 배터리, 엔진, 통신, 고도, Telemetry 이상 탐지
-- Python Telemetry Generator 시나리오 송신
-- UDP Receiver 기반 Telemetry 수신 및 파싱
+- TelemetryParser 기반 UDP payload 문자열 파싱
+- UdpReceiver 기반 UDP Telemetry 수신
+- Python Telemetry Generator 기반 시나리오 송신
 - PeriodicTask 기반 RTOS식 주기 태스크 모사
 - CsvLogger 기반 임무 상태, 이벤트, Telemetry 기록
-- GoogleTest 기반 정상/비정상 시나리오 검증
+- Telemetry timeout 감지 및 ABORT 처리
+- GoogleTest 기반 핵심 임무 로직 검증
 
 ## 상태머신 개요
 
@@ -70,7 +72,7 @@ MissionController는 다음 상태를 관리한다.
 
 ## 이벤트 탐지 정책
 
-HealthMonitor는 Telemetry를 기반으로 다음 이벤트를 탐지할 예정이다.
+HealthMonitor는 Telemetry를 기반으로 다음 이벤트를 탐지한다.
 
 - LOW_BATTERY
 - ENGINE_OVERHEAT
@@ -88,34 +90,51 @@ cmake -S . -B build
 cmake --build build
 ```
 
-실행:
+터미널 1에서 C++ 시뮬레이터 실행:
 
 ```bash
 ./build/uav_mission_sw_simulator
 ```
 
-## 테스트 실행 방법
-
-현재 테스트 파일은 TODO 기반 스켈레톤만 포함한다. GoogleTest 연동 후 다음 형태로 실행할 예정이다.
+터미널 2에서 Python Telemetry Generator 실행:
 
 ```bash
-cmake -S . -B build -DBUILD_TESTING=ON
+python3 simulator/telemetry_generator.py
+```
+
+## 테스트 실행 방법
+
+GoogleTest 기반 테스트는 MissionController, HealthMonitor, TelemetryParser의 핵심 동작을 검증한다.
+
+```bash
+cmake -S . -B build
 cmake --build build
 ctest --test-dir build
 ```
 
+현재 테스트 결과:
+
+```text
+100% tests passed, 0 tests failed out of 10
+```
+
+## 지원 시나리오
+
+- `normal_mission`: 정상 Telemetry 시퀀스 전송
+- `low_battery_return`: 배터리 부족으로 RETURN_HOME 유도
+- `engine_overheat_abort`: 엔진 과열로 ABORT 유도
+- `telemetry_timeout_abort`: Telemetry 전송 중단으로 timeout ABORT 유도
+- `altitude_deviation_warning`: 목표 고도 허용 오차 초과 이벤트 유도
+
 ## 개발 로드맵
 
-1. Telemetry 데이터 구조와 유효성 검증 기준 확정
-2. MissionController 상태 전이 로직 구현
-3. HealthMonitor 이벤트 탐지 로직 구현
-4. UDP 수신 및 Telemetry 파싱 구현
-5. CSV 로그 포맷 정의 및 기록 구현
-6. PeriodicTask 기반 주기 실행 구조 구현
-7. Python Telemetry Generator 시나리오 구현
-8. GoogleTest 정상/비정상 시나리오 작성
-9. 로그 샘플과 실행 결과를 README에 추가
+1. mission_config.json 기반 임계값 로딩
+2. Python Telemetry Generator 시나리오 선택 인자 추가
+3. UDP 수신 thread와 임무 처리 thread 분리 검토
+4. GoogleTest 시나리오 확대
+5. 로그 샘플과 실행 결과 이미지 추가
+6. README와 docs에 설계 의도 및 트러블슈팅 보강
 
 ## 이력서용 프로젝트 요약 문장
 
-C++17 기반 UAV 임무SW 시뮬레이터를 설계하여 상태머신 기반 임무 제어, Telemetry 기반 상태 감시, 비정상 이벤트 대응 정책, UDP 데이터 수신, 주기 태스크 구조, CSV 로그 기록 및 GoogleTest 검증 시나리오를 포트폴리오 형태로 구성했다.
+C++17 기반 UAV 임무SW 시뮬레이터를 설계하고 구현하여 상태머신 기반 임무 제어, UDP Telemetry 수신, 상태 감시, 비정상 이벤트 대응, timeout 기반 Abort 처리, 주기 태스크 구조, CSV 로그 기록 및 GoogleTest 검증을 수행했다.
