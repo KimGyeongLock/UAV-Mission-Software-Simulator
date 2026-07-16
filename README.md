@@ -161,6 +161,16 @@ python3 simulator/telemetry_generator.py --scenario altitude_deviation
 | `timeout` | Telemetry 전송 중단으로 timeout ABORT 유도 |
 | `altitude_deviation` | 목표 고도 허용 오차 초과 이벤트 유도 |
 
+## 샘플 로그
+
+시나리오별 실행 결과는 `docs/sample-logs/`에 CSV 파일로 정리한다.
+
+| 시나리오 | 샘플 로그 |
+| --- | --- |
+| Low Battery Return | `docs/sample-logs/low_battery_mission_log.csv` |
+| Engine Overheat Abort | `docs/sample-logs/engine_overheat_mission_log.csv` |
+| Telemetry Timeout Abort | `docs/sample-logs/timeout_mission_log.csv` |
+
 ## 개발 로드맵
 
 1. UDP 수신 thread와 임무 처리 thread 분리 검토

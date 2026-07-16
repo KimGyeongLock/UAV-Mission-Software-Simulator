@@ -1,0 +1,5 @@
+state,event,battery_percent,engine_temperature_c,altitude_m,target_altitude_m,signal_strength_percent,valid
+EN_ROUTE,NONE,80,60,1000,1000,90,1
+MISSION_EXECUTE,NONE,80,60,1000,1000,90,1
+RETURN_HOME,LOW_BATTERY,20,60,1000,1000,90,1
+ABORT,TELEMETRY_TIMEOUT,100,0,0,0,100,0
