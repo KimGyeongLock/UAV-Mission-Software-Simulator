@@ -16,6 +16,7 @@ add_executable(uav_mission_sw_simulator
     src/scheduler/PeriodicTask.cpp
     src/core/TelemetryParser.cpp
     src/core/MissionConfigLoader.cpp
+    src/app/MissionApplication.cpp
 )
 
 target_include_directories(uav_mission_sw_simulator
