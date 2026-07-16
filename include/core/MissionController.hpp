@@ -15,7 +15,6 @@ public:
 
     void handleEvent(const Event& event);
 
-    // TODO: Add helper methods for state validation if needed.
     MissionState state() const;
 
 private:
