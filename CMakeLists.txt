@@ -22,16 +22,37 @@ target_include_directories(uav_mission_sw_simulator
         ${CMAKE_CURRENT_SOURCE_DIR}/include
 )
 
-# TODO: Enable GoogleTest after core behavior is implemented.
-# Example future structure:
-# enable_testing()
-# add_subdirectory(tests)
-# find_package(GTest REQUIRED)
-# add_executable(uav_mission_sw_tests
-#     tests/MissionControllerTest.cpp
-#     tests/HealthMonitorTest.cpp
-#     tests/TelemetryParsingTest.cpp
-# )
-# target_link_libraries(uav_mission_sw_tests PRIVATE GTest::gtest_main)
-# include(GoogleTest)
-# gtest_discover_tests(uav_mission_sw_tests)
+include(FetchContent)
+
+FetchContent_Declare(
+    googletest
+    URL https://github.com/google/googletest/archive/refs/tags/v1.14.0.zip
+)
+
+set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
+FetchContent_MakeAvailable(googletest)
+
+enable_testing()
+
+add_executable(uav_mission_sw_tests
+    tests/MissionControllerTest.cpp
+    tests/HealthMonitorTest.cpp
+    tests/TelemetryParsingTest.cpp
+    src/core/MissionController.cpp
+    src/core/HealthMonitor.cpp
+    src/core/StringUtils.cpp
+    src/core/TelemetryParser.cpp
+)
+
+target_include_directories(uav_mission_sw_tests
+    PRIVATE
+        ${CMAKE_CURRENT_SOURCE_DIR}/include
+)
+
+target_link_libraries(uav_mission_sw_tests
+    PRIVATE
+        GTest::gtest_main
+)
+
+include(GoogleTest)
+gtest_discover_tests(uav_mission_sw_tests)
