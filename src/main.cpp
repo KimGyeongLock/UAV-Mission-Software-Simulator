@@ -14,10 +14,11 @@
 using namespace std;
 
 int main() {
+    uav::core::MissionConfig config;
     uav::core::MissionController controller;
-    uav::core::HealthMonitor monitor;
+    uav::core::HealthMonitor monitor(config);
+    uav::io::UdpReceiver receiver(config.udp_port);
 
-    uav::io::UdpReceiver receiver(5005);
     if (!receiver.start()) {
         cerr << "Failed to start UDP receiver\n";
         return 1;

@@ -89,3 +89,16 @@ TEST(HealthMonitorTest, DetectsTelemetryTimeout) {
     
     EXPECT_EQ(event.type, uav::core::EventType::TELEMETRY_TIMEOUT);
 }
+
+TEST(HealthMonitorTest, UsesCustomLowBatteryThreshold) {
+    uav::core::MissionConfig config;
+    config.low_battery_percent = 50.0;
+
+    uav::core::HealthMonitor monitor(config);
+    auto telemetry = createNormalTelemetry();
+    telemetry.battery_percent = 40.0;
+
+    const auto event = monitor.evaluate(telemetry);
+
+    EXPECT_EQ(event.type, uav::core::EventType::LOW_BATTERY);
+}

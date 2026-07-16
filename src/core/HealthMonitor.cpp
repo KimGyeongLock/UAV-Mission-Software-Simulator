@@ -2,20 +2,11 @@
 #include <cmath>
 #include <chrono>
 
-namespace {
-    
-constexpr double kLowBatteryThreshold = 25.0;
-constexpr double kEngineOverheatThreshold = 90.0;
-constexpr double kSignalWeakThreshold = 30.0;
-constexpr double kAltitudeTolerance = 50.0;
-constexpr auto kTelemetryTimeout = std::chrono::milliseconds(3000);
-
-} // namespace
-
 namespace uav::core {
 
-HealthMonitor::HealthMonitor()
-    : last_telemetry_time_(std::chrono::steady_clock::now()) {}
+HealthMonitor::HealthMonitor(MissionConfig config)
+    : config_(config),
+      last_telemetry_time_(std::chrono::steady_clock::now()) {}
 
 Event HealthMonitor::evaluate(const Telemetry& telemetry) {
     last_telemetry_time_ = std::chrono::steady_clock::now(); // 마지막 수신 시간
@@ -27,19 +18,19 @@ Event HealthMonitor::evaluate(const Telemetry& telemetry) {
         return Event{EventType::INVALID_TELEMETRY};
     }
 
-    if (telemetry.engine_temperature_c > kEngineOverheatThreshold) {
+    if (telemetry.engine_temperature_c > config_.engine_overheat_celsius) {
         return Event{EventType::ENGINE_OVERHEAT};
     }
 
-    if (telemetry.battery_percent < kLowBatteryThreshold) {
+    if (telemetry.battery_percent < config_.low_battery_percent) {
         return Event{EventType::LOW_BATTERY};
     }
 
-    if (telemetry.signal_strength_percent < kSignalWeakThreshold) {
+    if (telemetry.signal_strength_percent < config_.signal_weak_percent) {
         return Event{EventType::SIGNAL_WEAK};
     }
 
-    if (std::abs(telemetry.altitude_m - telemetry.target_altitude_m) > kAltitudeTolerance) {
+    if (std::abs(telemetry.altitude_m - telemetry.target_altitude_m) > config_.altitude_tolerance_m) {
         return Event{EventType::ALTITUDE_DEVIATION};
     }
 
@@ -49,7 +40,7 @@ Event HealthMonitor::evaluate(const Telemetry& telemetry) {
 Event HealthMonitor::checkTelemetryTimeout() {
     const auto now = std::chrono::steady_clock::now();
 
-    if (now - last_telemetry_time_ > kTelemetryTimeout) {
+    if (now - last_telemetry_time_ > config_.telemetry_timeout) {
         return Event{EventType::TELEMETRY_TIMEOUT};
     }
 
