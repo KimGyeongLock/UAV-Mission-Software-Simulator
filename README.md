@@ -4,7 +4,7 @@
 
 UAV Mission Software Simulator는 C++17 기반 무인기 임무 제어, 상태 감시, 비정상 대응 절차를 학습하고 포트폴리오로 정리하기 위한 시뮬레이터 프로젝트이다. 실제 비행 제어기를 구현하는 것이 아니라, 임무 소프트웨어 관점에서 상태머신, 주기 태스크, Telemetry 수신, 이상 탐지, 이벤트 로깅 구조를 설계하고 단계적으로 구현하는 것을 목표로 한다.
 
-현재 버전은 상태머신, Telemetry 이벤트 탐지, UDP 수신, Python Telemetry 송신, CSV 로그 기록, 주기 태스크 실행, timeout 기반 Abort 처리, GoogleTest 검증까지 포함한 1차 동작 가능한 임무SW 시뮬레이터이다.
+현재 버전은 상태머신, Telemetry 이벤트 탐지, UDP 수신, Python Telemetry 송신, CSV 로그 기록, 주기 태스크 실행, timeout 기반 Abort 처리, mission_config.json 기반 임계값 설정, GoogleTest 검증까지 포함한 1차 동작 가능한 임무SW 시뮬레이터이다.
 
 ## KAI 임무SW 직무와의 연관성
 
@@ -53,6 +53,7 @@ flowchart LR
 - PeriodicTask 기반 RTOS식 주기 태스크 모사
 - CsvLogger 기반 임무 상태, 이벤트, Telemetry 기록
 - Telemetry timeout 감지 및 ABORT 처리
+- mission_config.json 기반 임무 및 이벤트 임계값 로딩
 - GoogleTest 기반 핵심 임무 로직 검증
 
 ## 상태머신 개요
@@ -82,6 +83,28 @@ HealthMonitor는 Telemetry를 기반으로 다음 이벤트를 탐지한다.
 - INVALID_TELEMETRY
 
 각 이벤트의 세부 조건과 대응 상태는 [docs/event-policy.md](docs/event-policy.md)에 정리한다.
+
+## 설정 파일
+
+시뮬레이터는 `config/mission_config.json`에서 임무 파라미터, 이벤트 탐지 임계값, UDP 수신 포트, 로그 설정을 읽는다. 설정 파일을 사용하면 코드 수정 없이 임무 조건과 비정상 탐지 기준을 조정할 수 있다.
+
+주요 설정값:
+
+| 항목 | 설명 |
+| --- | --- |
+| `target_altitude_m` | 기준 목표 고도 |
+| `low_battery_percent` | LOW_BATTERY 이벤트 임계값 |
+| `engine_overheat_celsius` | ENGINE_OVERHEAT 이벤트 임계값 |
+| `signal_weak_percent` | SIGNAL_WEAK 이벤트 임계값 |
+| `telemetry_timeout_ms` | TELEMETRY_TIMEOUT 판단 시간 |
+| `altitude_tolerance_m` | ALTITUDE_DEVIATION 허용 오차 |
+| `listen_port` | C++ UdpReceiver가 바인딩할 UDP 포트 |
+
+기본 설정 파일:
+
+```text
+config/mission_config.json
+```
 
 ## 빌드 방법
 
@@ -115,7 +138,7 @@ ctest --test-dir build
 현재 테스트 결과:
 
 ```text
-100% tests passed, 0 tests failed out of 10
+100% tests passed, 0 tests failed out of 15
 ```
 
 ## 지원 시나리오
@@ -140,12 +163,11 @@ python3 simulator/telemetry_generator.py --scenario altitude_deviation
 
 ## 개발 로드맵
 
-1. mission_config.json 기반 임계값 로딩
-2. UDP 수신 thread와 임무 처리 thread 분리 검토
-3. GoogleTest 시나리오 확대
-4. 로그 샘플과 실행 결과 이미지 추가
-5. README와 docs에 설계 의도 및 트러블슈팅 보강
+1. UDP 수신 thread와 임무 처리 thread 분리 검토
+2. GoogleTest 시나리오 확대
+3. 로그 샘플과 실행 결과 이미지 추가
+4. README와 docs에 설계 의도 및 트러블슈팅 보강
 
 ## 이력서용 프로젝트 요약 문장
 
-C++17 기반 UAV 임무SW 시뮬레이터를 설계하고 구현하여 상태머신 기반 임무 제어, UDP Telemetry 수신, 상태 감시, 비정상 이벤트 대응, timeout 기반 Abort 처리, 주기 태스크 구조, CSV 로그 기록 및 GoogleTest 검증을 수행했다.
+C++17 기반 UAV 임무SW 시뮬레이터를 설계하고 구현하여 상태머신 기반 임무 제어, UDP Telemetry 수신, 설정 파일 기반 상태 감시, 비정상 이벤트 대응, timeout 기반 Abort 처리, 주기 태스크 구조, CSV 로그 기록 및 GoogleTest 검증을 수행했다.
