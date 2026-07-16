@@ -11,6 +11,13 @@
 | 고도 이탈 Warning | 현재 고도가 목표 고도 허용 오차 초과 | ALTITUDE_DEVIATION | 현재 임무 상태 유지 | 구현 |
 | 비정상 Telemetry 처리 | 음수 배터리, 비정상 온도, 누락된 필드 등 | INVALID_TELEMETRY | 상태 유지 또는 ABORT 정책 확장 대상 | 일부 구현 |
 
+## 시나리오별 샘플 로그 경로
+| 시나리오 | 샘플 로그 |
+| --- | --- |
+| 배터리 부족 복귀 | `docs/sample-logs/low_battery_mission_log.csv` |
+| 엔진 과열 Abort | `docs/sample-logs/engine_overheat_mission_log.csv` |
+| 통신 두절 Abort | `docs/sample-logs/timeout_mission_log.csv` |
+
 ## GoogleTest 구현 현황
 
 | 테스트 파일 | 검증 내용 |
