@@ -7,6 +7,7 @@
 #include <arpa/inet.h>
 #include <sys/socket.h>
 #include <unistd.h>
+#include <sys/time.h>
 
 #include "core/TelemetryParser.hpp"
 
@@ -26,6 +27,17 @@ bool UdpReceiver::start() {
     address.sin_port = htons(port_); // 수신할 포트 설정
 
     if (::bind(socket_fd_, reinterpret_cast<sockaddr*>(&address), sizeof(address)) < 0) { // socket을 특정 포트에 연결
+        ::close(socket_fd_);
+        socket_fd_ = -1;
+        return false;
+    }
+
+    timeval timeout{};
+    timeout.tv_sec = 1;
+    timeout.tv_usec = 0;
+
+    // 1초 안에 데이터가 안 오면 실패처럼 반환
+    if (::setsockopt(socket_fd_, SOL_SOCKET, SO_RCVTIMEO, &timeout, sizeof(timeout)) < 0) {
         ::close(socket_fd_);
         socket_fd_ = -1;
         return false;

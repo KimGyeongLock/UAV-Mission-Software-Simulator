@@ -38,7 +38,25 @@ int main() {
             const auto telemetry = receiver.receive();
 
             if (!telemetry.has_value()) {
-                cout << "tick=" << tick_count << " no telemetry received\n";
+                const auto event = monitor.checkTelemetryTimeout();
+
+                if (event.type == uav::core::EventType::TELEMETRY_TIMEOUT) {
+                    controller.handleEvent(event);
+
+                    uav::core::Telemetry empty_telemetry;
+                    empty_telemetry.valid = false;
+
+                    logger.log(controller.state(), event, empty_telemetry);
+
+                    cout << "tick=" << tick_count
+                         << " state=" << uav::core::toString(controller.state())
+                         << " event=" << uav::core::toString(event.type)
+                         << " no telemetry received"
+                         << '\n';
+                } else {
+                    cout << "tick=" << tick_count << " no telemetry received\n";
+                }
+
                 tick_count++;
                 return;
             }

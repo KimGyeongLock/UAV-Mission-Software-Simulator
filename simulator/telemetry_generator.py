@@ -47,7 +47,18 @@ def engine_overheat_abort():
 
 def telemetry_timeout_abort():
     """timeout 처리가 발생할 만큼 충분히 오래 Telemetry 전송을 멈춤"""
-    pass
+    with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as sock:
+        payloads = [
+            "80.0,60.0,90.0,1000.0,1000.0,1",
+            "80.0,60.0,90.0,1000.0,1000.0,1",
+        ]
+
+        for payload in payloads:
+            send_payload(sock, payload)
+            time.sleep(1)
+
+        print("stop sending telemetry to trigger timeout")
+        time.sleep(5)
 
 
 def altitude_deviation_warning():
@@ -64,4 +75,4 @@ def altitude_deviation_warning():
 
 
 if __name__ == "__main__":
-    low_battery_return()
+    telemetry_timeout_abort()

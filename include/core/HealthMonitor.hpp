@@ -1,5 +1,7 @@
 #pragma once
 
+#include <chrono>
+
 #include "core/Event.hpp"
 #include "core/Telemetry.hpp"
 
@@ -11,8 +13,10 @@ public:
 
     Event evaluate(const Telemetry& telemetry);
 
-    // TODO: Implement timeout detection based on last telemetry receive time.
     Event checkTelemetryTimeout();
+
+private: 
+    std::chrono::steady_clock::time_point last_telemetry_time_;
 };
 
 }  // namespace uav::core
