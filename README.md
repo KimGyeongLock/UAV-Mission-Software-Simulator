@@ -1,5 +1,7 @@
 # UAV Mission Software Simulator
 
+[![CMake CI](https://github.com/KimGyeongLock/UAV-Mission-Software-Simulator/actions/workflows/ci.yml/badge.svg)](https://github.com/KimGyeongLock/UAV-Mission-Software-Simulator/actions/workflows/ci.yml)
+
 ## 프로젝트 개요
 
 UAV Mission Software Simulator는 C++17 기반 무인기 임무 제어, 상태 감시, 비정상 대응 절차를 학습하고 포트폴리오로 정리하기 위한 시뮬레이터 프로젝트이다. 실제 비행 제어기를 구현하는 것이 아니라, 임무 소프트웨어 관점에서 상태머신, 주기 태스크, Telemetry 수신, 이상 탐지, 이벤트 로깅 구조를 설계하고 단계적으로 구현하는 것을 목표로 한다.
