@@ -6,7 +6,7 @@
 
 UAV Mission Software Simulator는 C++17 기반 무인기 임무 제어, 상태 감시, 비정상 대응 절차를 학습하고 포트폴리오로 정리하기 위한 시뮬레이터 프로젝트이다. 실제 비행 제어기를 구현하는 것이 아니라, 임무 소프트웨어 관점에서 상태머신, 주기 태스크, Telemetry 수신, 이상 탐지, 이벤트 로깅 구조를 설계하고 단계적으로 구현하는 것을 목표로 한다.
 
-현재 버전은 상태머신, Telemetry 이벤트 탐지, UDP 수신 thread, mutex 보호 Telemetry queue, Python Telemetry 송신, CSV 로그 기록, 주기 태스크 실행, timeout 기반 Abort 처리, mission_config.json 기반 임계값 설정, GoogleTest 검증까지 포함한 1차 동작 가능한 임무SW 시뮬레이터이다.
+현재 버전은 상태머신, Telemetry 이벤트 탐지, UDP 수신 thread, mutex 보호 Telemetry queue, Python Telemetry 송신, random/fault injection 기반 시험 데이터 생성, CSV 로그 기록, 주기 태스크 실행, timeout 기반 Abort 처리, mission_config.json 기반 임계값 설정, GoogleTest 검증까지 포함한 1차 동작 가능한 임무SW 시뮬레이터이다.
 
 ## KAI 임무SW 직무와의 연관성
 
@@ -56,6 +56,7 @@ flowchart LR
 - UDP 수신 thread와 Mission PeriodicTask 분리
 - mutex 보호 Telemetry queue 기반 producer-consumer 구조
 - Python Telemetry Generator 기반 시나리오 송신
+- random stream 및 fault injection 기반 Telemetry 시험 모드
 - PeriodicTask 기반 RTOS식 주기 태스크 모사
 - CsvLogger 기반 임무 상태, 이벤트, Telemetry 기록
 - Telemetry timeout 감지 및 ABORT 처리
@@ -140,7 +141,7 @@ cmake --build build
 터미널 2에서 Python Telemetry Generator 실행:
 
 ```bash
-python3 simulator/telemetry_generator.py --scenario low_battery
+python3 simulator/telemetry_generator.py --mode scenario --scenario low_battery
 ```
 
 ## 테스트 실행 방법
@@ -159,16 +160,20 @@ ctest --test-dir build
 100% tests passed, 0 tests failed out of 15
 ```
 
-## 지원 시나리오
+## 지원 시나리오와 시험 모드
 
-Python Telemetry Generator는 `--scenario` 옵션으로 실행할 시나리오를 선택한다.
+Python Telemetry Generator는 `--mode` 옵션으로 실행 방식을 선택한다.
+
+### Scenario Mode
+
+정해진 정상/비정상 시나리오를 재생한다.
 
 ```bash
-python3 simulator/telemetry_generator.py --scenario normal
-python3 simulator/telemetry_generator.py --scenario low_battery
-python3 simulator/telemetry_generator.py --scenario engine_overheat
-python3 simulator/telemetry_generator.py --scenario timeout
-python3 simulator/telemetry_generator.py --scenario altitude_deviation
+python3 simulator/telemetry_generator.py --mode scenario --scenario normal
+python3 simulator/telemetry_generator.py --mode scenario --scenario low_battery
+python3 simulator/telemetry_generator.py --mode scenario --scenario engine_overheat
+python3 simulator/telemetry_generator.py --mode scenario --scenario timeout
+python3 simulator/telemetry_generator.py --mode scenario --scenario altitude_deviation
 ```
 
 | 시나리오 | 설명 |
@@ -178,6 +183,42 @@ python3 simulator/telemetry_generator.py --scenario altitude_deviation
 | `engine_overheat` | 엔진 과열로 ABORT 유도 |
 | `timeout` | Telemetry 전송 중단으로 timeout ABORT 유도 |
 | `altitude_deviation` | 목표 고도 허용 오차 초과 이벤트 유도 |
+
+### Random Stream Mode
+
+정상 범위 내에서 배터리, 엔진 온도, 통신 신호, 고도를 랜덤하게 생성해 지속 전송한다.
+
+```bash
+python3 simulator/telemetry_generator.py --mode random --duration 10
+```
+
+### Fault Injection Mode
+
+정상 Telemetry를 전송하다가 지정한 시점 이후 fault 값을 주입한다.
+
+```bash
+python3 simulator/telemetry_generator.py --mode fault --fault engine_overheat --after 3 --duration 8
+```
+
+지원 fault:
+
+| Fault | 기대 결과 |
+| --- | --- |
+| `low_battery` | LOW_BATTERY 탐지 후 RETURN_HOME 전이 |
+| `engine_overheat` | ENGINE_OVERHEAT 탐지 후 ABORT 전이 |
+| `signal_weak` | SIGNAL_WEAK 이벤트 탐지 |
+| `altitude_deviation` | ALTITUDE_DEVIATION 이벤트 탐지 |
+| `invalid_telemetry` | INVALID_TELEMETRY 이벤트 탐지 |
+| `timeout` | TELEMETRY_TIMEOUT 탐지 후 ABORT 전이 |
+
+Engine overheat fault injection 실행 예시:
+
+```text
+tick=1 state=EN_ROUTE event=NONE battery=80
+tick=2 state=MISSION_EXECUTE event=NONE battery=80
+tick=3 state=RETURN_HOME event=NONE battery=80
+tick=4 state=ABORT event=ENGINE_OVERHEAT battery=80
+```
 
 ## 샘플 로그
 
@@ -194,8 +235,8 @@ python3 simulator/telemetry_generator.py --scenario altitude_deviation
 1. GoogleTest 시나리오 확대
 2. 로그 샘플과 실행 결과 이미지 추가
 3. README와 docs에 설계 의도 및 트러블슈팅 보강
-4. Python random/fault injection 모드 추가
+4. UDP 수신 queue overflow 정책 테스트 추가
 
 ## 이력서용 프로젝트 요약 문장
 
-C++17 기반 UAV 임무SW 시뮬레이터를 설계하고 구현하여 상태머신 기반 임무 제어, UDP Telemetry 수신 thread, mutex 기반 producer-consumer queue, 설정 파일 기반 상태 감시, 비정상 이벤트 대응, timeout 기반 Abort 처리, 주기 태스크 구조, CSV 로그 기록 및 GoogleTest 검증을 수행했다.
+C++17 기반 UAV 임무SW 시뮬레이터를 설계하고 구현하여 상태머신 기반 임무 제어, UDP Telemetry 수신 thread, mutex 기반 producer-consumer queue, 설정 파일 기반 상태 감시, fault injection 기반 비정상 이벤트 재현, timeout 기반 Abort 처리, 주기 태스크 구조, CSV 로그 기록 및 GoogleTest 검증을 수행했다.
