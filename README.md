@@ -6,7 +6,7 @@
 
 UAV Mission Software Simulator는 C++17 기반 무인기 임무 제어, 상태 감시, 비정상 대응 절차를 학습하고 포트폴리오로 정리하기 위한 시뮬레이터 프로젝트이다. 실제 비행 제어기를 구현하는 것이 아니라, 임무 소프트웨어 관점에서 상태머신, 주기 태스크, Telemetry 수신, 이상 탐지, 이벤트 로깅 구조를 설계하고 단계적으로 구현하는 것을 목표로 한다.
 
-현재 버전은 상태머신, Telemetry 이벤트 탐지, UDP 수신, Python Telemetry 송신, CSV 로그 기록, 주기 태스크 실행, timeout 기반 Abort 처리, mission_config.json 기반 임계값 설정, GoogleTest 검증까지 포함한 1차 동작 가능한 임무SW 시뮬레이터이다.
+현재 버전은 상태머신, Telemetry 이벤트 탐지, UDP 수신 thread, mutex 보호 Telemetry queue, Python Telemetry 송신, CSV 로그 기록, 주기 태스크 실행, timeout 기반 Abort 처리, mission_config.json 기반 임계값 설정, GoogleTest 검증까지 포함한 1차 동작 가능한 임무SW 시뮬레이터이다.
 
 ## KAI 임무SW 직무와의 연관성
 
@@ -32,17 +32,19 @@ UAV Mission Software Simulator는 C++17 기반 무인기 임무 제어, 상태 �
 
 ## 전체 아키텍처
 
-Python Telemetry Generator가 UDP로 가상의 비행 데이터를 송신하고, C++ Mission Software Simulator가 이를 수신한다. UdpReceiver는 UDP payload를 받고, TelemetryParser는 문자열 payload를 Telemetry 구조체로 변환한다. HealthMonitor는 Telemetry를 검사해 이벤트를 판단하고, MissionController는 이벤트와 현재 상태를 바탕으로 임무 상태를 전이한다. CsvLogger는 임무 상태, 이벤트, Telemetry를 CSV 로그로 기록한다.
+Python Telemetry Generator가 UDP로 가상의 비행 데이터를 송신하고, C++ Mission Software Simulator가 이를 수신한다. UdpReceiver는 별도 receiver thread에서 UDP payload를 수신하고, TelemetryParser는 문자열 payload를 Telemetry 구조체로 변환한다. 파싱된 Telemetry는 mutex로 보호되는 queue에 저장되며, Mission PeriodicTask는 정해진 주기마다 queue에서 Telemetry를 하나씩 꺼내 HealthMonitor와 MissionController에 전달한다. 이 구조를 통해 blocking UDP 수신이 임무 주기 태스크를 직접 지연시키지 않도록 분리했다. CsvLogger는 임무 상태, 이벤트, Telemetry를 CSV 로그로 기록한다.
 
 ```mermaid
 flowchart LR
-    A["Python Telemetry Generator"] -->|UDP telemetry packet| B["C++ UDP Receiver"]
+    A["Python Telemetry Generator"] -->|UDP telemetry packet| B["UdpReceiver Thread"]
     B --> C["TelemetryParser"]
-    C --> D["HealthMonitor"]
-    D --> E["MissionController"]
-    E --> F["CsvLogger"]
-    C --> F
-    D --> F
+    C --> D["Telemetry Queue"]
+    D --> E["Mission PeriodicTask"]
+    E --> F["HealthMonitor"]
+    F --> G["MissionController"]
+    E --> H["CsvLogger"]
+    F --> H
+    G --> H
 ```
 
 ## 구현 완료 기능
@@ -51,12 +53,26 @@ flowchart LR
 - HealthMonitor 기반 배터리, 엔진, 통신, 고도, Telemetry 이상 탐지
 - TelemetryParser 기반 UDP payload 문자열 파싱
 - UdpReceiver 기반 UDP Telemetry 수신
+- UDP 수신 thread와 Mission PeriodicTask 분리
+- mutex 보호 Telemetry queue 기반 producer-consumer 구조
 - Python Telemetry Generator 기반 시나리오 송신
 - PeriodicTask 기반 RTOS식 주기 태스크 모사
 - CsvLogger 기반 임무 상태, 이벤트, Telemetry 기록
 - Telemetry timeout 감지 및 ABORT 처리
 - mission_config.json 기반 임무 및 이벤트 임계값 로딩
 - GoogleTest 기반 핵심 임무 로직 검증
+
+
+## Threading Model
+
+시뮬레이터는 UDP 수신과 임무 판단을 분리한다.
+
+| 실행 단위 | 역할 |
+| --- | --- |
+| Receiver Thread | UDP payload 수신, Telemetry 파싱, queue 저장 |
+| Mission PeriodicTask | queue에서 Telemetry 소비, 이벤트 판단, 상태 전이, 로그 기록 |
+
+Receiver Thread는 blocking UDP receive를 담당하고, Mission PeriodicTask는 설정된 주기로 임무 판단을 수행한다. 두 실행 단위는 mutex로 보호되는 Telemetry queue를 통해 데이터를 전달한다. queue가 가득 찬 경우 오래된 Telemetry를 버리고 최신 데이터를 보존하는 정책을 적용할 수 있다.
 
 ## 상태머신 개요
 
@@ -175,11 +191,11 @@ python3 simulator/telemetry_generator.py --scenario altitude_deviation
 
 ## 개발 로드맵
 
-1. UDP 수신 thread와 임무 처리 thread 분리 검토
-2. GoogleTest 시나리오 확대
-3. 로그 샘플과 실행 결과 이미지 추가
-4. README와 docs에 설계 의도 및 트러블슈팅 보강
+1. GoogleTest 시나리오 확대
+2. 로그 샘플과 실행 결과 이미지 추가
+3. README와 docs에 설계 의도 및 트러블슈팅 보강
+4. Python random/fault injection 모드 추가
 
 ## 이력서용 프로젝트 요약 문장
 
-C++17 기반 UAV 임무SW 시뮬레이터를 설계하고 구현하여 상태머신 기반 임무 제어, UDP Telemetry 수신, 설정 파일 기반 상태 감시, 비정상 이벤트 대응, timeout 기반 Abort 처리, 주기 태스크 구조, CSV 로그 기록 및 GoogleTest 검증을 수행했다.
+C++17 기반 UAV 임무SW 시뮬레이터를 설계하고 구현하여 상태머신 기반 임무 제어, UDP Telemetry 수신 thread, mutex 기반 producer-consumer queue, 설정 파일 기반 상태 감시, 비정상 이벤트 대응, timeout 기반 Abort 처리, 주기 태스크 구조, CSV 로그 기록 및 GoogleTest 검증을 수행했다.
