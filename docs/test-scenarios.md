@@ -18,16 +18,31 @@
 | 엔진 과열 Abort | `docs/sample-logs/engine_overheat_mission_log.csv` |
 | 통신 두절 Abort | `docs/sample-logs/timeout_mission_log.csv` |
 
+
+## Fault Injection 검증
+
+Python Telemetry Generator의 `--mode fault` 옵션을 사용해 정상 Telemetry 전송 중 지정 시점 이후 fault 값을 주입한다.
+
+| Fault | 실행 예 | 기대 이벤트 | 기대 상태 |
+| --- | --- | --- | --- |
+| `low_battery` | `--mode fault --fault low_battery --after 3` | LOW_BATTERY | RETURN_HOME |
+| `engine_overheat` | `--mode fault --fault engine_overheat --after 3` | ENGINE_OVERHEAT | ABORT |
+| `signal_weak` | `--mode fault --fault signal_weak --after 3` | SIGNAL_WEAK | 현재 상태 유지 또는 정책 확장 대상 |
+| `altitude_deviation` | `--mode fault --fault altitude_deviation --after 3` | ALTITUDE_DEVIATION | 현재 상태 유지 |
+| `invalid_telemetry` | `--mode fault --fault invalid_telemetry --after 3` | INVALID_TELEMETRY | 상태 유지 또는 정책 확장 대상 |
+| `timeout` | `--mode fault --fault timeout --after 3` | TELEMETRY_TIMEOUT | ABORT |
+
 ## GoogleTest 구현 현황
 
 | 테스트 파일 | 검증 내용 |
 | --- | --- |
 | `MissionControllerTest.cpp` | 정상 상태 전이, 이벤트 기반 RETURN_HOME, 치명 이벤트 ABORT |
-| `HealthMonitorTest.cpp` | 정상 Telemetry, 배터리 부족, 엔진 과열, 고도 이탈 탐지 |
+| `HealthMonitorTest.cpp` | 정상 Telemetry, 배터리 부족, 엔진 과열, 신호 약화, 고도 이탈, invalid telemetry, timeout 탐지 |
 | `TelemetryParsingTest.cpp` | 정상 payload 파싱, malformed payload 거부 |
+| `MissionConfigLoaderTest.cpp` | mission_config.json 설정 로딩 검증 |
 
 현재 테스트 결과:
 
 ```text
-100% tests passed, 0 tests failed out of 10
+100% tests passed, 0 tests failed out of 15
 ```

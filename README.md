@@ -64,6 +64,17 @@ flowchart LR
 - GoogleTest 기반 핵심 임무 로직 검증
 
 
+
+## 설계 포인트
+
+- MissionController를 상태머신으로 분리하여 임무 단계 전이를 명확히 관리한다.
+- HealthMonitor를 독립 모듈로 분리하여 Telemetry 기반 이벤트 탐지를 담당하게 했다.
+- UDP 수신 thread와 Mission PeriodicTask를 분리하여 blocking I/O가 임무 주기 실행을 직접 지연시키지 않도록 설계했다.
+- mutex 보호 Telemetry queue를 적용해 receiver thread와 mission task 사이의 producer-consumer 구조를 구성했다.
+- mission_config.json 기반 임계값 설정으로 코드 수정 없이 이벤트 탐지 정책을 조정할 수 있게 했다.
+- Python Telemetry Generator에 scenario, random stream, fault injection 모드를 제공해 정상/비정상 상황을 재현 가능하게 했다.
+- GoogleTest와 GitHub Actions CI로 핵심 상태 전이, 이벤트 탐지, 파싱, 설정 로딩 로직을 자동 검증한다.
+
 ## Threading Model
 
 시뮬레이터는 UDP 수신과 임무 판단을 분리한다.
