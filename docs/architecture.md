@@ -67,7 +67,7 @@ Receiver Thread가 blocking I/O를 담당하므로 UDP 수신 대기가 Mission 
 - Python Telemetry Generator 시나리오 송신 구현
 - CsvLogger CSV 기록 구현
 - PeriodicTask 기반 주기 실행 구현
-- GoogleTest 15개 테스트 통과
+- GoogleTest 18개 테스트 통과
 
 ## 설계 원칙
 

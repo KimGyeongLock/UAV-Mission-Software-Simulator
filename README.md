@@ -168,7 +168,7 @@ ctest --test-dir build
 현재 테스트 결과:
 
 ```text
-100% tests passed, 0 tests failed out of 15
+100% tests passed, 0 tests failed out of 18
 ```
 
 ## 지원 시나리오와 시험 모드

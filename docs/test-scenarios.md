@@ -44,5 +44,5 @@ Python Telemetry Generator의 `--mode fault` 옵션을 사용해 정상 Telemetr
 현재 테스트 결과:
 
 ```text
-100% tests passed, 0 tests failed out of 15
+100% tests passed, 0 tests failed out of 18
 ```
