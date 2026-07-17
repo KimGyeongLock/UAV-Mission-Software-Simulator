@@ -16,7 +16,21 @@
 #include "io/UdpReceiver.hpp"
 #include "scheduler/PeriodicTask.hpp"
 
+namespace {
+
+constexpr int kMaxSimulationTicks = 10;
+constexpr auto kMissionTaskPeriod = std::chrono::milliseconds(1000);
+constexpr auto kMainLoopSleep = std::chrono::milliseconds(100);
+
+}  // namespace
+
 namespace uav::app {
+
+bool shouldFinishMission(core::MissionState state, int tick_count) {
+    return state == core::MissionState::COMPLETE ||
+           state == core::MissionState::ABORT ||
+           tick_count >= kMaxSimulationTicks;
+}
 
 MissionApplication::MissionApplication(std::string config_path)
     : config_path_(std::move(config_path)) {}
@@ -71,11 +85,7 @@ int MissionApplication::run() {
 
                 tick_count++;
 
-                if (controller.state() == core::MissionState::COMPLETE ||
-                    controller.state() == core::MissionState::ABORT ||
-                    tick_count >= 10) {
-                    mission_finished = true;
-                }
+                mission_finished = shouldFinishMission(controller.state(), tick_count);
 
                 return;
             }
@@ -98,20 +108,16 @@ int MissionApplication::run() {
 
             tick_count++;
 
-            if (controller.state() == core::MissionState::COMPLETE ||
-                controller.state() == core::MissionState::ABORT ||
-                tick_count >= 10) {
-                mission_finished = true;
-            }
+            mission_finished = shouldFinishMission(controller.state(), tick_count);
         },
-        std::chrono::milliseconds(1000)
+        kMissionTaskPeriod
     );
 
     startReceiverThread(receiver);
     task.start();
 
     while (!mission_finished) {
-        std::this_thread::sleep_for(std::chrono::milliseconds(100));
+        std::this_thread::sleep_for(kMainLoopSleep);
     }
 
     task.stop();
