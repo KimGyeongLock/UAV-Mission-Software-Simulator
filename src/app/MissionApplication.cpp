@@ -47,7 +47,7 @@ int MissionApplication::run() {
 
     scheduler::PeriodicTask task(
         [&]() {
-            const auto telemetry = consumeLatestTelemetry();
+            const auto telemetry = popTelemetry();
 
             if (!telemetry.has_value()) {
                 const auto event = monitor.checkTelemetryTimeout();
@@ -122,6 +122,8 @@ int MissionApplication::run() {
     return 0;
 }
 
+constexpr std::size_t kMaxTelemetryQueueSize = 100;
+
 void MissionApplication::startReceiverThread(io::UdpReceiver& receiver) {
     receiver_running_ = true;
 
@@ -135,7 +137,12 @@ void MissionApplication::startReceiverThread(io::UdpReceiver& receiver) {
 
             if (telemetry.has_value()) {
                 std::lock_guard<std::mutex> lock(telemetry_mutex_);
-                latest_telemetry_ = telemetry.value();
+
+                if (telemetry_queue_.size() >= kMaxTelemetryQueueSize) {
+                    telemetry_queue_.pop();
+                }
+            
+                telemetry_queue_.push(telemetry.value());
             }
         }
     });
@@ -149,11 +156,15 @@ void MissionApplication::stopReceiverThread() {
     }
 }
 
-std::optional<core::Telemetry> MissionApplication::consumeLatestTelemetry() {
+std::optional<core::Telemetry> MissionApplication::popTelemetry() {
     std::lock_guard<std::mutex> lock(telemetry_mutex_);
 
-    auto telemetry = latest_telemetry_;
-    latest_telemetry_.reset();
+    if (telemetry_queue_.empty()) {
+        return std::nullopt;
+    }
+
+    auto telemetry = telemetry_queue_.front();
+    telemetry_queue_.pop();
 
     return telemetry;
 }
