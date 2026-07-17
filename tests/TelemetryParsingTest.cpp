@@ -20,3 +20,15 @@ TEST(TelemetryParsingTest, RejectsMalformedPayload) {
 
     EXPECT_FALSE(telemetry.has_value());
 }
+
+TEST(TelemetryParsingTest, RejectsPayloadWithInvalidNumber) {
+    const auto telemetry = uav::core::parseTelemetryLine("80.0,not_number,90.0,1000.0,1000.0,1");
+
+    EXPECT_FALSE(telemetry.has_value());
+}
+
+TEST(TelemetryParsingTest, RejectsPayloadWithTooManyFields) {
+    const auto telemetry = uav::core::parseTelemetryLine("80.0,60.0,90.0,1000.0,1000.0,1,extra");
+
+    EXPECT_FALSE(telemetry.has_value());
+}
