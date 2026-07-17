@@ -1,5 +1,6 @@
 #include "app/MissionApplication.hpp"
 
+#include <atomic>
 #include <chrono>
 #include <iostream>
 #include <thread>
@@ -21,16 +22,17 @@ namespace {
 constexpr int kMaxSimulationTicks = 10;
 constexpr auto kMissionTaskPeriod = std::chrono::milliseconds(1000);
 constexpr auto kMainLoopSleep = std::chrono::milliseconds(100);
+constexpr std::size_t kMaxTelemetryQueueSize = 100;
+
+bool shouldFinishMission(uav::core::MissionState state, int tick_count) {
+    return state == uav::core::MissionState::COMPLETE ||
+           state == uav::core::MissionState::ABORT ||
+           tick_count >= kMaxSimulationTicks;
+}
 
 }  // namespace
 
 namespace uav::app {
-
-bool shouldFinishMission(core::MissionState state, int tick_count) {
-    return state == core::MissionState::COMPLETE ||
-           state == core::MissionState::ABORT ||
-           tick_count >= kMaxSimulationTicks;
-}
 
 MissionApplication::MissionApplication(std::string config_path)
     : config_path_(std::move(config_path)) {}
@@ -55,7 +57,7 @@ int MissionApplication::run() {
     }
 
     int tick_count = 0;
-    bool mission_finished = false;
+    std::atomic<bool> mission_finished{false};
 
     controller.startMission();
 
@@ -85,7 +87,7 @@ int MissionApplication::run() {
 
                 tick_count++;
 
-                mission_finished = shouldFinishMission(controller.state(), tick_count);
+                mission_finished.store(shouldFinishMission(controller.state(), tick_count));
 
                 return;
             }
@@ -108,7 +110,7 @@ int MissionApplication::run() {
 
             tick_count++;
 
-            mission_finished = shouldFinishMission(controller.state(), tick_count);
+            mission_finished.store(shouldFinishMission(controller.state(), tick_count));
         },
         kMissionTaskPeriod
     );
@@ -116,7 +118,7 @@ int MissionApplication::run() {
     startReceiverThread(receiver);
     task.start();
 
-    while (!mission_finished) {
+    while (!mission_finished.load()) {
         std::this_thread::sleep_for(kMainLoopSleep);
     }
 
@@ -128,15 +130,10 @@ int MissionApplication::run() {
     return 0;
 }
 
-constexpr std::size_t kMaxTelemetryQueueSize = 100;
-
 void MissionApplication::startReceiverThread(io::UdpReceiver& receiver) {
     receiver_running_ = true;
 
-    /*
-        receiver thread는 UDP 데이터를 기다린다.
-        데이터가 오면 latest_telemetry_에 저장한다.
-    */
+    // Receiver thread owns blocking UDP receive and pushes parsed telemetry into the queue.
     receiver_thread_ = std::thread([this, &receiver]() {
         while (receiver_running_) {
             auto telemetry = receiver.receive();
@@ -147,7 +144,7 @@ void MissionApplication::startReceiverThread(io::UdpReceiver& receiver) {
                 if (telemetry_queue_.size() >= kMaxTelemetryQueueSize) {
                     telemetry_queue_.pop();
                 }
-            
+
                 telemetry_queue_.push(telemetry.value());
             }
         }
