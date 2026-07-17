@@ -8,6 +8,12 @@ UAV Mission Software Simulator는 C++17 기반 무인기 임무 제어, 상태 �
 
 현재 버전은 상태머신, Telemetry 이벤트 탐지, UDP 수신 thread, mutex 보호 Telemetry queue, Python Telemetry 송신, random/fault injection 기반 시험 데이터 생성, CSV 로그 기록, 주기 태스크 실행, timeout 기반 Abort 처리, mission_config.json 기반 임계값 설정, GoogleTest 검증까지 포함한 1차 동작 가능한 임무SW 시뮬레이터이다.
 
+## 실행 예시
+
+### Engine Overheat Fault Injection
+
+![Engine Overheat Fault Injection](docs/images/fault_injection_engine_overheat.png)
+
 ## KAI 임무SW 직무와의 연관성
 
 이 프로젝트는 항공기 및 무인기 임무SW 직무에서 중요하게 다루는 다음 역량을 보여주기 위한 목적으로 설계되었다.
