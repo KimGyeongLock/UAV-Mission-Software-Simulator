@@ -14,9 +14,9 @@ UAV Mission Software Simulator는 C++17 기반 무인기 임무 제어, 상태 �
 
 ![Engine Overheat Fault Injection](docs/images/fault_injection_engine_overheat.png)
 
-## KAI 임무SW 직무와의 연관성
+## SW 직무와의 연관성
 
-이 프로젝트는 항공기 및 무인기 임무SW 직무에서 중요하게 다루는 다음 역량을 보여주기 위한 목적으로 설계되었다.
+이 프로젝트는 SW 직무에서 중요하게 다루는 다음 역량을 보여주기 위한 목적으로 설계되었다.
 
 - 임무 단계별 상태 관리와 상태 전이 설계
 - Telemetry 기반 상태 감시 및 비정상 이벤트 판단
